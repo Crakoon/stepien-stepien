@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepien & Stepien</title>
+    <!-- Tailwind CSS for sleek utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter and Playfair Display for high-end typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom typography classes */
+        .font-serif-title {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+        .font-sans-body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Glassmorphism card effect */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-modal {
+            background: rgba(10, 15, 30, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Ambient canvas background styling */
+        #ambient-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Smooth fade-in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Notification Toast & Modal Transitions */
+        #toast {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(100px);
+            opacity: 0;
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #guide-modal {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #guide-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #guide-modal-content {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(0.95) translateY(10px);
+        }
+        #guide-modal.open #guide-modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Custom scrollbar for guide modal */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans-body min-h-screen flex flex-col justify-between overflow-hidden antialiased selection:bg-amber-500/30 selection:text-amber-200">
+
+    <!-- Interactive Ambient Canvas Background (Simulates smooth video loop) -->
+    <canvas id="ambient-canvas"></canvas>
+
+    <!-- Radial Vignette Overlay -->
+    <div class="fixed inset-0 bg-radial-vignette pointer-events-none z-1" style="background: radial-gradient(circle at center, transparent 15%, rgba(2, 6, 23, 0.8) 100%);"></div>
+
+    <!-- Header Navigation Bar -->
+    <header class="relative z-10 w-full max-w-7xl mx-auto px-6 py-8 flex justify-between items-center opacity-0 animate-fade-in" style="animation-delay: 0.2s;">
+        <div class="flex items-center space-x-3">
+            <!-- Brand Mark Icon -->
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400/20 to-amber-600/40 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
+                <span class="font-serif-title text-amber-300 font-semibold text-sm">S&S</span>
+            </div>
+            <span class="text-xs uppercase tracking-widest text-slate-400 font-medium">Est. 2026</span>
+        </div>
+
+        <!-- Free Hosting Guide Trigger Button -->
+        <div>
+            <button onclick="toggleGuideModal(true)" class="inline-flex items-center px-4 py-2 rounded-full text-xs font-medium bg-slate-800/80 hover:bg-slate-700/80 text-amber-300 border border-amber-500/30 hover:border-amber-400/50 backdrop-blur-md transition-all duration-200 shadow-lg shadow-amber-500/5 group">
+                <svg class="w-3.5 h-3.5 mr-1.5 text-amber-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span>How to Host Free</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Center Hero Container -->
+    <main class="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
+        <div class="glass-panel max-w-2xl w-full mx-auto p-8 sm:p-14 rounded-3xl text-center transition-all duration-500 hover:border-slate-700/60 animate-fade-in opacity-0" style="animation-delay: 0.4s;">
+            
+            <!-- Category Tag -->
+            <div class="inline-block mb-4 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium tracking-widest uppercase">
+                Advisory &amp; Consultancy
+            </div>
+
+            <!-- Company Name -->
+            <h1 class="font-serif-title text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-white mb-6 leading-tight drop-shadow-sm">
+                Stepien <span class="italic font-normal text-amber-400/90">&amp;</span> Stepien
+            </h1>
+
+            <!-- Accent Divider -->
+            <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400/60 to-transparent mx-auto mb-6"></div>
+
+            <!-- Description -->
+            <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed max-w-lg mx-auto mb-10">
+                Crafting bespoke solutions with precision and strategy. Our official web portal is currently under development.
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <!-- Direct Email Link -->
+                <a href="mailto:bartek@stepien-stepien.com" class="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-semibold text-sm transition-all duration-200 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 hover:scale-[1.02] active:scale-[0.98]">
+                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    Send Inquiry
+                </a>
+
+                <!-- Click-to-Copy Button -->
+                <button onclick="copyEmailToClipboard('bartek@stepien-stepien.com')" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 font-medium text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                    <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    Copy Email
+                </button>
+            </div>
+
+            <!-- Email Display Label -->
+            <div class="mt-6 text-xs text-slate-400 tracking-wide">
+                Direct Contact: <span class="text-slate-300 font-mono select-all">bartek@stepien-stepien.com</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Minimalist Footer -->
+    <footer class="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 text-center text-xs text-slate-500 opacity-0 animate-fade-in" style="animation-delay: 0.6s;">
+        <p>&copy; 2026 Stepien &amp; Stepien. All rights reserved.</p>
+    </footer>
+
+    <!-- FREE HOSTING GUIDE MODAL -->
+    <div id="guide-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md">
+        <div id="guide-modal-content" class="glass-modal max-w-3xl w-full max-h-[85vh] rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative border border-slate-700/50">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-semibold text-white">How to Host This Site for Free</h2>
+                        <p class="text-xs text-slate-400">Deploy live to <code class="text-amber-300">stepien-stepien.com</code> with zero ongoing fees</p>
+                    </div>
+                </div>
+                <!-- Close Modal Button -->
+                <button onclick="toggleGuideModal(false)" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Tab Navigation for Deployment Methods -->
+            <div class="flex border-b border-slate-800 mb-6 space-x-2">
+                <button id="tab-btn-gh" onclick="switchGuideTab('gh')" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-amber-400 text-amber-300 bg-slate-800/40 transition-all">
+                    Method A: GitHub Pages (Recommended)
+                </button>
+                <button id="tab-btn-cf" onclick="switchGuideTab('cf')" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">
+                    Method B: Cloudflare Pages
+                </button>
+            </div>
+
+            <!-- Modal Body Scroll Area -->
+            <div class="flex-1 overflow-y-auto custom-scroll pr-2 space-y-6 text-sm text-slate-300">
+                
+                <!-- GITHUB PAGES GUIDE CONTENT -->
+                <div id="guide-content-gh" class="space-y-4">
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">1</span>
+                            Create a Free GitHub Account & Repository
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            Go to <a href="https://github.com" target="_blank" class="text-amber-300 underline">github.com</a> and sign up. Click the <strong class="text-slate-200">"+"</strong> icon in the top corner → <strong class="text-slate-200">"New Repository"</strong>. Name it <code class="text-slate-200 bg-slate-800 px-1.5 py-0.5 rounded">stepien-stepien</code> and select **Public**.
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">2</span>
+                            Upload This Code File
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            In your new repository, click <strong class="text-slate-200">"Add file" → "Create new file"</strong>. Name the file exactly <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">index.html</code>. Copy and paste all the code from this webpage directly into the editor and click <strong class="text-slate-200">"Commit changes"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">3</span>
+                            Enable GitHub Pages
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            Go to <strong class="text-slate-200">Settings → Pages</strong> inside your repository. Under "Build and deployment", set **Source** to <code class="text-slate-200 bg-slate-800 px-1.5 py-0.5 rounded">Deploy from a branch</code> and select <code class="text-slate-200 bg-slate-800 px-1.5 py-0.5 rounded">main</code> branch. Click **Save**. Within 1–2 minutes, your website is live at a free URL!
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">4</span>
+                            Connect Custom Domain (stepien-stepien.com)
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            In GitHub Pages settings under <strong class="text-slate-200">Custom domain</strong>, enter <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">stepien-stepien.com</code>. In your domain provider DNS settings (where you bought the domain), add an **A Record** pointing to <code class="text-slate-200 bg-slate-800 px-1.5 py-0.5 rounded">185.199.108.153</code> and check **Enforce HTTPS** in GitHub.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- CLOUDFLARE PAGES GUIDE CONTENT -->
+                <div id="guide-content-cf" class="space-y-4 hidden">
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">1</span>
+                            Create a Free Cloudflare Account
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            Sign up at <a href="https://dash.cloudflare.com" target="_blank" class="text-amber-300 underline">dash.cloudflare.com</a>. Navigate to <strong class="text-slate-200">Workers &amp; Pages → Create Application → Pages</strong> tab.
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">2</span>
+                            Upload Assets Direct
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            Select <strong class="text-slate-200">"Upload Assets"</strong>. Save this code file as <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">index.html</code> inside a folder on your computer, drag and drop the folder, and click <strong class="text-slate-200">Deploy</strong>.
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <h3 class="font-medium text-amber-300 mb-1 flex items-center">
+                            <span class="w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-xs flex items-center justify-center mr-2 border border-amber-400/20">3</span>
+                            Instant Custom Domain Linking
+                        </h3>
+                        <p class="text-xs text-slate-400 pl-7">
+                            Once deployed, click <strong class="text-slate-200">"Custom Domains" → "Set up a Custom Domain"</strong> and type <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">stepien-stepien.com</code>. Cloudflare will automatically handle SSL certificates and DNS routing for zero cost.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="toggleGuideModal(false)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium transition-colors">
+                    Close Guide
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm shadow-2xl space-x-3 pointer-events-none">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toast-msg">Email copied to clipboard!</span>
+    </div>
+
+    <script>
+        /**
+         * Dynamic Ambient Fluid Canvas Animation
+         * Simulates smooth, ambient looping video aesthetics using HTML5 Canvas radial math
+         */
+        (function() {
+            const canvas = document.getElementById('ambient-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let time = 0;
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            function animate() {
+                time += 0.003; // Smooth video-like progression
+
+                // Deep background fill
+                ctx.fillStyle = 'rgb(2, 6, 23)';
+                ctx.fillRect(0, 0, width, height);
+
+                // Calculate fluid moving coordinates
+                const cx1 = width * (0.5 + 0.3 * Math.sin(time * 0.8));
+                const cy1 = height * (0.5 + 0.3 * Math.cos(time * 0.6));
+                
+                const cx2 = width * (0.5 + 0.3 * Math.cos(time * 0.5));
+                const cy2 = height * (0.5 + 0.3 * Math.sin(time * 0.7));
+
+                const cx3 = width * (0.5 + 0.2 * Math.sin(time * 1.1));
+                const cy3 = height * (0.5 + 0.2 * Math.cos(time * 0.9));
+
+                // Ambient Orb 1 (Warm Amber Glow)
+                const grad1 = ctx.createRadialGradient(cx1, cy1, 10, cx1, cy1, Math.max(width, height) * 0.65);
+                grad1.addColorStop(0, 'rgba(180, 83, 9, 0.28)');
+                grad1.addColorStop(1, 'rgba(2, 6, 23, 0)');
+
+                ctx.fillStyle = grad1;
+                ctx.fillRect(0, 0, width, height);
+
+                // Ambient Orb 2 (Royal Indigo Blue)
+                const grad2 = ctx.createRadialGradient(cx2, cy2, 10, cx2, cy2, Math.max(width, height) * 0.75);
+                grad2.addColorStop(0, 'rgba(67, 56, 202, 0.22)');
+                grad2.addColorStop(1, 'rgba(2, 6, 23, 0)');
+
+                ctx.fillStyle = grad2;
+                ctx.fillRect(0, 0, width, height);
+
+                // Ambient Orb 3 (Gold Highlight Accent)
+                const grad3 = ctx.createRadialGradient(cx3, cy3, 5, cx3, cy3, Math.max(width, height) * 0.45);
+                grad3.addColorStop(0, 'rgba(217, 119, 6, 0.15)');
+                grad3.addColorStop(1, 'rgba(2, 6, 23, 0)');
+
+                ctx.fillStyle = grad3;
+                ctx.fillRect(0, 0, width, height);
+
+                requestAnimationFrame(animate);
+            }
+
+            window.onload = function() {
+                animate();
+            };
+        })();
+
+        // Clipboard Copy Helper Function
+        function copyEmailToClipboard(email) {
+            const tempInput = document.createElement('input');
+            tempInput.value = email;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast('Copied ' + email + ' to clipboard!');
+            } catch (err) {
+                showToast('Failed to copy. Email: ' + email);
+            }
+            
+            document.body.removeChild(tempInput);
+        }
+
+        // Notification Toast Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.textContent = message;
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Free Hosting Guide Modal Toggle Logic
+        function toggleGuideModal(show) {
+            const modal = document.getElementById('guide-modal');
+            if (show) {
+                modal.classList.add('open');
+            } else {
+                modal.classList.remove('open');
+            }
+        }
+
+        // Tab Switching Logic inside Guide Modal
+        function switchGuideTab(tab) {
+            const btnGh = document.getElementById('tab-btn-gh');
+            const btnCf = document.getElementById('tab-btn-cf');
+            const contentGh = document.getElementById('guide-content-gh');
+            const contentCf = document.getElementById('guide-content-cf');
+
+            if (tab === 'gh') {
+                btnGh.className = 'px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-amber-400 text-amber-300 bg-slate-800/40 transition-all';
+                btnCf.className = 'px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all';
+                contentGh.classList.remove('hidden');
+                contentCf.classList.add('hidden');
+            } else {
+                btnCf.className = 'px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-amber-400 text-amber-300 bg-slate-800/40 transition-all';
+                btnGh.className = 'px-4 py-2 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all';
+                contentCf.classList.remove('hidden');
+                contentGh.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
